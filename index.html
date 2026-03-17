@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>三小龙虾财富创造系统 - 完整离线版</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: #fff;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container { max-width: 1400px; margin: 0 auto; }
+        
+        .wealth-panel {
+            background: rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+            border: 2px solid rgba(76, 175, 80, 0.5);
+            text-align: center;
+        }
+        .wealth-title { font-size: 1.6rem; font-weight: 700; margin-bottom: 12px; color: #4CAF50; }
+        .wealth-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 20px; margin-top: 12px; }
+        .wealth-card { background: rgba(76, 175, 80, 0.15); border: 1px solid rgba(76, 175, 80, 0.3); border-radius: 12px; padding: 16px; }
+        .wealth-value { font-size: 1.8rem; font-weight: 700; margin-bottom: 6px; font-family: 'Courier New', monospace; }
+        .wealth-label { font-size: 0.85rem; color: rgba(255, 255, 255, 0.8); }
+        
+        .header { background: rgba(0, 0, 0, 0.3); backdrop-filter: blur(10px); border-radius: 12px; padding: 16px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; border: 1px solid rgba(255, 255, 255, 0.1); }
+        .logo { display: flex; align-items: center; gap: 12px; }
+        .logo h1 { font-size: 1.6rem; font-weight: 600; background: linear-gradient(45deg, #4CAF50, #FFD700); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        
+        .controls { display: flex; gap: 12px; align-items: center; }
+        .control-btn { background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.2); color: white; padding: 8px 16px; border-radius: 20px; cursor: pointer; transition: all 0.2s ease; font-size: 0.85rem; }
+        .auto-trade-btn { background: linear-gradient(45deg, #FFD700, #FFA500); color: #000; font-weight: 700; }
+        
+        .main-content { display: grid; grid-template-columns: 1fr 350px; gap: 20px; margin-bottom: 20px; }
+        .stocks-panel { background: rgba(0, 0, 0, 0.3); backdrop-filter: blur(10px); border-radius: 12px; padding: 20px; border: 1px solid rgba(255, 255, 255, 0.1); }
+        .panel-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 12px; }
+        .panel-title { font-size: 1.2rem; font-weight: 600; color: #4CAF50; }
+        
+        .stock-list { max-height: 450px; overflow-y: auto; }
+        .stock-item { background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 8px; padding: 12px; margin-bottom: 8px; cursor: pointer; }
+        .stock-item.selected { background: rgba(76, 175, 80, 0.2); border-color: #4CAF50; }
+        .stock-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+        .stock-name { font-weight: 600; font-size: 1rem; }
+        .stock-price { font-size: 1.2rem; font-weight: 700; }
+        .price-up { color: #4CAF50; }
+        .price-down { color: #F44336; }
+        .signal-badge { background: rgba(255, 215, 0, 0.2); color: #FFD700; padding: 2px 6px; border-radius: 10px; font-size: 0.75rem; font-weight: 600; margin-top: 4px; }
+        
+        .sidebar { display: flex; flex-direction: column; gap: 20px; }
+        .chart-panel, .trade-panel { background: rgba(0, 0, 0, 0.3); backdrop-filter: blur(10px); border-radius: 12px; padding: 20px; border: 1px solid rgba(255, 255, 255, 0.1); }
+        .chart-container { height: 180px; background: rgba(0, 0, 0, 0.2); border-radius: 10px; padding: 12px; margin-top: 12px; display: flex; align-items: center; justify-content: center; color: rgba(255, 255, 255, 0.6); }
+        
+        .stats-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-top: 16px; }
+        .stat-card { background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 10px; padding: 12px; text-align: center; }
+        .stat-number { font-size: 1.4rem; font-weight: 700; margin-bottom: 4px; font-family: 'Courier New', monospace; }
+        .stat-label-sm { font-size: 0.7rem; color: rgba(255, 255, 255, 0.6); }
+        
+        .trade-form { display: flex; flex-direction: column; gap: 12px; }
+        .form-group { display: flex; flex-direction: column; gap: 6px; }
+        .form-label { font-size: 0.85rem; color: rgba(255, 255, 255, 0.8); font-weight: 500; }
+        .form-input { background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.15); color: white; padding: 12px 14px; border-radius: 8px; font-size: 0.95rem; min-height: 40px; }
+        .trade-buttons { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 6px; }
+        .trade-btn { padding: 14px; border: none; border-radius: 10px; color: white; font-weight: 600; cursor: pointer; font-size: 0.95rem; min-height: 44px; }
+        .buy-btn { background: linear-gradient(45deg, #4CAF50, #2E7D32); }
+        .sell-btn { background: linear-gradient(45deg, #F44336, #C62828); }
+        
+        .risk-info { 
+            font-size: 0.8rem; 
+            color: rgba(255, 255, 255, 0.7); 
+            margin-top: 8px; 
+            padding: 8px; 
+            background: rgba(255, 255, 255, 0.05); 
+            border-radius: 8px; 
+        }
+        
+        @media (max-width: 1024px) {
+            .main-content { grid-template-columns: 1fr; }
+            .header { flex-direction: column; gap: 16px; text-align: center; }
+        }
+    </style>
+</head>
+<body>
+    <div id="app" class="container">
+        <div class="wealth-panel">
+            <h2 class="wealth-title">💰 三小龙虾财富创造系统</h2>
+            <div class="wealth-stats">
+                <div class="wealth-card">
+                    <div class="wealth-value">¥1,000,000</div>
+                    <div class="wealth-label">总资金</div>
+                </div>
+                <div class="wealth-card">
+                    <div class="wealth-value">20%</div>
+                    <div class="wealth-label">月度目标</div>
+                </div>
+                <div class="wealth-card">
+                    <div class="wealth-value">✅</div>
+                    <div class="wealth-label">离线运行</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="header">
+            <div class="logo">
+                <i class="fas fa-chart-line"></i>
+                <h1>三小龙虾财富创造系统</h1>
+            </div>
+            <div class="controls">
+                <button class="control-btn auto-trade-btn" onclick="startTrading()">
+                    <i class="fas fa-play"></i> 开始交易
+                </button>
+                <button class="control-btn" onclick="refreshData()">
+                    <i class="fas fa-sync-alt"></i> 刷新数据
+                </button>
+            </div>
+        </div>
+
+        <div class="main-content">
+            <div class="stocks-panel">
+                <div class="panel-header">
+                    <h2 class="panel-title">智能选股池</h2>
+                </div>
+                <div class="stock-list" id="stockList">
+                    <!-- 股票列表将通过JavaScript生成 -->
+                </div>
+            </div>
+
+            <div class="sidebar">
+                <div class="chart-panel">
+                    <h3 class="panel-title">持仓详情</h3>
+                    <div class="chart-container" id="positionContainer">
+                        暂无持仓
+                    </div>
+                </div>
+
+                <div class="trade-panel">
+                    <h3 class="panel-title">快速交易</h3>
+                    <div class="trade-form" id="tradeForm">
+                        <div class="form-group">
+                            <label class="form-label">股票: <span id="selectedStockName">请选择股票</span></label>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">交易数量 (股)</label>
+                            <input type="number" class="form-input" id="tradeQuantity" value="100" placeholder="输入数量">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">交易金额: <span id="tradeAmount">¥0.00</span></label>
+                        </div>
+                        <div class="trade-buttons">
+                            <button class="trade-btn buy-btn" onclick="placeOrder('buy')">
+                                <i class="fas fa-arrow-up"></i> 买入
+                            </button>
+                            <button class="trade-btn sell-btn" onclick="placeOrder('sell')">
+                                <i class="fas fa-arrow-down"></i> 卖出
+                            </button>
+                        </div>
+                        <div class="risk-info">
+                            ⚠️ 风险控制: 单笔≤20万 | 止损-8% | 止盈15%
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <script>
+            // 离线版数据引擎
+            class OfflineDataEngine {
+                constructor() {
+                    this.stocks = [
+                        { code: 'sh000001', name: '上证指数', basePrice: 3050, volatility: 0.8 },
+                        { code: 'sz399001', name: '深证成指', basePrice: 11200, volatility: 1.2 },
+                        { code: 'sh600519', name: '贵州茅台', basePrice: 1780, volatility: 1.5 },
+                        { code: 'sh600036', name: '招商银行', basePrice: 38.5, volatility: 1.0 },
+                        { code: 'sz000001', name: '平安银行', basePrice: 20.8, volatility: 1.1 },
+                        { code: 'sz000651', name: '格力电器', basePrice: 42.3, volatility: 1.3 },
+                        { code: 'sh601318', name: '中国平安', basePrice: 52.6, volatility: 1.2 },
+                        { code: 'sh600000', name: '浦发银行', basePrice: 10.2, volatility: 0.9 }
+                    ];
+                    this.historicalData = {};
+                    this.initializeHistoricalData();
+                }
+
+                initializeHistoricalData() {
+                    this.stocks.forEach(stock => {
+                        this.historicalData[stock.code] = [];
+                        let currentPrice = stock.basePrice;
+                        for (let i = 0; i < 20; i++) {
+                            const change = (Math.random() - 0.5) * stock.volatility * 2;
+                            currentPrice = Math.max(currentPrice + change, stock.basePrice * 0.7);
+                            this.historicalData[stock.code].push(currentPrice);
+                        }
+                    });
+                }
+
+                generateData() {
+                    const stocksData = [];
+                    this.stocks.forEach(stock => {
+                        const historicalPrices = this.historicalData[stock.code];
+                        const lastPrice = historicalPrices[historicalPrices.length - 1];
+                        
+                        const dailyVolatility = stock.volatility / 100;
+                        const randomChange = (Math.random() - 0.5) * dailyVolatility * 2;
+                        const newPrice = lastPrice * (1 + randomChange);
+                        
+                        const minPrice = stock.basePrice * 0.6;
+                        const maxPrice = stock.basePrice * 1.8;
+                        const finalPrice = Math.min(Math.max(newPrice, minPrice), maxPrice);
+                        
+                        const change = finalPrice - lastPrice;
+                        const changePercent = (change / lastPrice) * 100;
+
+                        const ma20 = this.calculateMA(historicalPrices);
+                        const rsi = this.calculateRSI(historicalPrices);
+                        
+                        let signal = this.generateTradingSignal(changePercent, rsi, finalPrice, ma20);
+                        
+                        this.historicalData[stock.code].push(finalPrice);
+                        if (this.historicalData[stock.code].length > 20) {
+                            this.historicalData[stock.code].shift();
+                        }
+
+                        stocksData.push({
+                            code: stock.code,
+                            name: stock.name,
+                            price: parseFloat(finalPrice.toFixed(2)),
+                            change: parseFloat(change.toFixed(2)),
+                            changePercent: parseFloat(changePercent.toFixed(2)),
+                            ma20: parseFloat(ma20.toFixed(2)),
+                            rsi: parseFloat(rsi.toFixed(2)),
+                            signal: signal
+                        });
+                    });
+                    return stocksData;
+                }
+
+                calculateMA(prices) {
+                    if (prices.length < 20) return prices[prices.length - 1];
+                    const sum = prices.slice(-20).reduce((a, b) => a + b, 0);
+                    return sum / 20;
+                }
+
+                calculateRSI(prices) {
+                    if (prices.length < 15) return 50;
+                    const gains = [];
+                    const losses = [];
+                    
+                    for (let i = 1; i < prices.length; i++) {
+                        const diff = prices[i] - prices[i - 1];
+                        if (diff > 0) gains.push(diff);
+                        else losses.push(Math.abs(diff));
+                    }
+                    
+                    const avgGain = gains.length > 0 ? gains.reduce((a, b) => a + b, 0) / gains.length : 0;
+                    const avgLoss = losses.length > 0 ? losses.reduce((a, b) => a + b, 0) / losses.length : 0;
+                    
+                    if (avgLoss === 0) return 100;
+                    const rs = avgGain / avgLoss;
+                    return 100 - (100 / (1 + rs));
+                }
+
+                generateTradingSignal(changePercent, rsi, currentPrice, ma20) {
+                    const isUptrend = currentPrice > ma20;
+                    const isStrongUptrend = currentPrice > ma20 * 1.05;
+                    const isOversold = rsi < 30;
+                    const isOverbought = rsi > 70;
+                    
+                    if (isStrongUptrend && changePercent > 2) return '强势买入';
+                    else if ((isUptrend || isOversold) && changePercent > 0.8) return '买入信号';
+                    else if (!isOverbought && changePercent >= -0.8) return '持有';
+                    else if (isOverbought && changePercent < -0.8) return '观望';
+                    else return '卖出信号';
+                }
+            }
+
+            // 离线版交易引擎
+            class OfflineTradingEngine {
+                constructor() {
+                    this.accountBalance = 1000000;
+                    this.positions = {};
+                    this.riskSettings = {
+                        maxSingleTrade: 200000,
+                        stopLossPercent: -8,
+                        takeProfitPercent: 15
+                    };
+                }
+
+                executeBuy(symbol, quantity, price) {
+                    const amount = price * quantity;
+                    if (amount > this.accountBalance) throw new Error('资金不足');
+                    if (amount > this.riskSettings.maxSingleTrade) throw new Error(`单笔交易超过限制${this.riskSettings.maxSingleTrade.toLocaleString()}元`);
+                    
+                    this.accountBalance -= amount;
+                    this.updatePosition(symbol, quantity, price, 'buy');
+                    return { success: true, message: `买入成功`, remainingBalance: this.accountBalance };
+                }
+
+                executeSell(symbol, quantity, price) {
+                    const position = this.positions[symbol];
+                    if (!position || position.quantity < quantity) throw new Error('持仓不足');
+                    
+                    const amount = price * quantity;
+                    this.accountBalance += amount;
+                    this.updatePosition(symbol, -quantity, price, 'sell');
+                    return { success: true, message: `卖出成功`, remainingBalance: this.accountBalance };
+                }
+
+                updatePosition(symbol, quantityChange, price, action) {
+                    if (!this.positions[symbol]) this.positions[symbol] = { quantity: 0, averagePrice: 0 };
+                    const position = this.positions[symbol];
+                    const oldQuantity = position.quantity;
+                    const oldAveragePrice = position.averagePrice;
+                    
+                    if (action === 'buy') {
+                        const newQuantity = oldQuantity + quantityChange;
+                        const newAveragePrice = ((oldQuantity * oldAveragePrice) + (quantityChange * price)) / newQuantity;
+                        position.quantity = newQuantity;
+                        position.averagePrice = newAveragePrice;
+                    } else if (action === 'sell') {
+                        position.quantity = oldQuantity - quantityChange;
+                        if (position.quantity <= 0) delete this.positions[symbol];
+                    }
+                }
+
+                getAccountInfo() {
+                    return { balance: this.accountBalance, positions: { ...this.positions } };
+                }
+            }
+
+            // 全局变量
+            const dataEngine = new OfflineDataEngine();
+            const tradingEngine = new OfflineTradingEngine();
+            let stocks = [];
+            let selectedStock = null;
+            let accountBalance = 1000000;
+            let positions = {};
+
+            // 初始化
+            function init() {
+                refreshData();
+                setInterval(refreshData, 30000); // 每30秒自动刷新
+            }
+
+            // 刷新数据
+            function refreshData() {
+                stocks = dataEngine.generateData();
+                renderStockList();
+                updateAccountDisplay();
+            }
+
+            // 渲染股票列表
+            function renderStockList() {
+                const container = document.getElementById('stockList');
+                container.innerHTML = '';
+                
+                stocks.forEach(stock => {
+                    const item = document.createElement('div');
+                    item.className = 'stock-item';
+                    if (selectedStock && selectedStock.code === stock.code) {
+                        item.classList.add('selected');
+                    }
+                    item.onclick = () => selectStock(stock);
+                    
+                    item.innerHTML = `
+                        <div class="stock-header">
+                            <div class="stock-name">${stock.name} (${stock.code})</div>
+                            <div class="stock-price ${stock.changePercent >= 0 ? 'price-up' : 'price-down'}">
+                                ¥${stock.price.toFixed(2)}
+                            </div>
+                        </div>
+                        <div class="signal-badge">
+                            ${stock.signal}
+                        </div>
+                        <div style="font-size: 0.7rem; color: rgba(255, 255, 255, 0.6); margin-top: 4px;">
+                            MA20: ¥${stock.ma20.toFixed(2)} | RSI: ${stock.rsi.toFixed(0)}
+                        </div>
+                    `;
+                    container.appendChild(item);
+                });
+            }
+
+            // 选择股票
+            function selectStock(stock) {
+                selectedStock = stock;
+                document.getElementById('selectedStockName').textContent = `${stock.name} (${stock.code})`;
+                document.getElementById('tradeAmount').textContent = `¥${(stock.price * (document.getElementById('tradeQuantity').value || 100)).toFixed(2)}`;
+            }
+
+            // 更新账户显示
+            function updateAccountDisplay() {
+                const wealthCards = document.querySelectorAll('.wealth-card');
+                if (wealthCards.length > 0) {
+                    wealthCards[0].querySelector('.wealth-value').textContent = `¥${accountBalance.toLocaleString()}`;
+                }
+                
+                // 更新持仓显示
+                const positionContainer = document.getElementById('positionContainer');
+                if (Object.keys(positions).length === 0) {
+                    positionContainer.innerHTML = '暂无持仓';
+                } else {
+                    let html = '';
+                    for (const [symbol, position] of Object.entries(positions)) {
+                        const stockName = stocks.find(s => s.code === symbol)?.name || symbol;
+                        html += `
+                            <div style="margin-bottom: 8px; padding: 8px; background: rgba(255, 255, 255, 0.05); border-radius: 8px;">
+                                <div style="font-weight: 600;">${stockName}</div>
+                                <div>数量: ${position.quantity}股</div>
+                                <div>成本: ¥${position.averagePrice.toFixed(2)}</div>
+                            </div>
+                        `;
+                    }
+                    positionContainer.innerHTML = html;
+                }
+            }
+
+            // 开始交易
+            function startTrading() {
+                alert(`✅ 模拟交易已启动！\n\n资金: ¥${accountBalance.toLocaleString()}\n目标: 月度20%收益\n风险控制: 单笔≤20万, 止损-8%, 止盈15%\n\n三小龙虾团队全力为您创造财富！`);
+            }
+
+            // 执行交易
+            function placeOrder(type) {
+                if (!selectedStock) {
+                    alert('请先选择一只股票！');
+                    return;
+                }
+                const quantity = parseInt(document.getElementById('tradeQuantity').value) || 100;
+                if (quantity <= 0) {
+                    alert('请输入有效的交易数量！');
+                    return;
+                }
+                
+                try {
+                    let result;
+                    if (type === 'buy') {
+                        result = tradingEngine.executeBuy(selectedStock.code, quantity, selectedStock.price);
+                    } else {
+                        result = tradingEngine.executeSell(selectedStock.code, quantity, selectedStock.price);
+                    }
+                    
+                    accountBalance = tradingEngine.getAccountInfo().balance;
+                    positions = tradingEngine.getAccountInfo().positions;
+                    updateAccountDisplay();
+                    
+                    alert(`${type === 'buy' ? '买入' : '卖出'}成功\n股票: ${selectedStock.name}\n价格: ¥${selectedStock.price.toFixed(2)}\n数量: ${quantity}股\n剩余资金: ¥${accountBalance.toLocaleString()}`);
+                } catch (error) {
+                    alert('交易失败: ' + error.message);
+                }
+            }
+
+            // 数量变化时更新金额显示
+            document.getElementById('tradeQuantity').addEventListener('input', function() {
+                if (selectedStock) {
+                    const quantity = parseInt(this.value) || 0;
+                    document.getElementById('tradeAmount').textContent = `¥${(selectedStock.price * quantity).toFixed(2)}`;
+                }
+            });
+
+            // 页面加载完成后初始化
+            window.onload = init;
+        </script>
+    </div>
+</body>
+</html>
